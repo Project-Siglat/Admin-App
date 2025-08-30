@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
-import ClientPage from './pages/ClientPage';
 
 const App: React.FC = () => {
   return (
@@ -10,7 +9,6 @@ const App: React.FC = () => {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/client" element={<ClientPage />} />
       </Routes>
     </Router>
   );
