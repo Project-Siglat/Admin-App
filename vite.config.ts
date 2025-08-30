@@ -1,11 +1,16 @@
-import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import path from 'path'
 
 export default defineConfig({
-  plugins: [sveltekit()],
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
   server: {
-    port: 2424,
-    strictPort: true,
-    host: "0.0.0.0"
+    port: parseInt(process.env.VITE_DEV_PORT) || 5173,
+    host: process.env.VITE_DEV_HOST === 'true' || true
   }
-});
+})
