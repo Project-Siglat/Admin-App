@@ -11,27 +11,13 @@
     "@sveltejs/adapter-auto": "^3.0.0",
     "@sveltejs/kit": "^2.0.0",
     "@sveltejs/vite-plugin-svelte": "^4.0.0",
+    "@tailwindcss/forms": "^0.5.10",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
     "svelte": "^5.0.0",
+    "tailwindcss": "^4.1.12",
     "typescript": "^5.0.0",
     "vite": "^5.0.3"
   },
-  "type": "module",
-  "dependencies": {
-    "@material/theme": "^14.0.0",
-    "@material/typography": "^14.0.0",
-    "@smui/button": "^8.0.3",
-    "@smui/card": "^8.0.3",
-    "@smui/checkbox": "^8.0.3",
-    "@smui/circular-progress": "^8.0.3",
-    "@smui/dialog": "^8.0.3",
-    "@smui/drawer": "^8.0.3",
-    "@smui/form-field": "^8.0.3",
-    "@smui/icon-button": "^8.0.3",
-    "@smui/list": "^8.0.3",
-    "@smui/menu": "^8.0.3",
-    "@smui/snackbar": "^8.0.3",
-    "@smui/textfield": "^8.0.3",
-    "@smui/tooltip": "^8.0.3",
-    "@smui/top-app-bar": "^8.0.3"
-  }
+  "type": "module"
 }

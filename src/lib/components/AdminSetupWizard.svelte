@@ -1,9 +1,9 @@
 <script>
-	import Card from '@smui/card';
-	import Button from '@smui/button';
-	import Textfield from '@smui/textfield';
-	import FormField from '@smui/form-field';
-	import CircularProgress from '@smui/circular-progress';
+	import Card from './Card.svelte';
+	import Button from './Button.svelte';
+	import TextField from './TextField.svelte';
+	import Checkbox from './Checkbox.svelte';
+	import CircularProgress from './CircularProgress.svelte';
 	import { createAdmin } from '$lib/api.js';
 	import { validatePassword } from '$lib/password.js';
 	import { createEventDispatcher } from 'svelte';
@@ -45,248 +45,126 @@
 
 	function getStrengthColor(strength) {
 		switch (strength) {
-			case 'weak': return '#f44336';
-			case 'medium': return '#ff9800';
-			case 'strong': return '#4caf50';
-			case 'very-strong': return '#2e7d32';
-			default: return '#9e9e9e';
+			case 'weak': return 'bg-red-500';
+			case 'medium': return 'bg-yellow-500';
+			case 'strong': return 'bg-green-500';
+			case 'very-strong': return 'bg-green-600';
+			default: return 'bg-gray-300';
+		}
+	}
+
+	function getStrengthWidth(strength) {
+		switch (strength) {
+			case 'weak': return 'w-1/4';
+			case 'medium': return 'w-2/4';
+			case 'strong': return 'w-3/4';
+			case 'very-strong': return 'w-full';
+			default: return 'w-0';
 		}
 	}
 </script>
 
-<div class="wizard-container">
-	<Card style="width: 100%; max-width: 480px; padding: 32px;">
-		<div class="wizard-header">
-			<h1 class="wizard-title">Welcome to SIGLAT Admin</h1>
-			<p class="wizard-subtitle">
+<div class="min-h-screen flex items-center justify-center p-5 bg-gradient-to-br from-white to-gray-50">
+	<Card elevation={2} class="w-full max-w-md p-8">
+		<div class="text-center mb-8">
+			<h1 class="text-3xl font-medium text-primary-700 mb-4">Welcome to SIGLAT Admin</h1>
+			<p class="text-gray-600 leading-relaxed">
 				No admin account found. Create your secure admin account to get started.
 			</p>
 		</div>
 
-		<form on:submit|preventDefault={handleSubmit} class="wizard-form">
-			<div class="form-group">
-				<Textfield
-					bind:value={email}
-					label="Admin Email"
-					type="email"
-					required
-					style="width: 100%;"
-					disabled={loading}
-				/>
-			</div>
+		<form on:submit|preventDefault={handleSubmit} class="space-y-6">
+			<TextField
+				bind:value={email}
+				label="Admin Email"
+				type="email"
+				required
+				fullWidth
+				disabled={loading}
+			/>
 
-			<div class="form-group">
-				<Textfield
+			<div class="space-y-2">
+				<TextField
 					bind:value={password}
 					label="Password"
 					type={showPassword ? 'text' : 'password'}
 					required
-					style="width: 100%;"
+					fullWidth
 					disabled={loading}
 				/>
 				
 				{#if password}
-					<div class="password-strength">
-						<div class="strength-bar">
-							<div 
-								class="strength-fill" 
-								style="width: {passwordValidation.strength === 'weak' ? '25%' : passwordValidation.strength === 'medium' ? '50%' : passwordValidation.strength === 'strong' ? '75%' : '100%'}; background-color: {getStrengthColor(passwordValidation.strength)}"
-							></div>
+					<div class="space-y-2">
+						<div class="flex items-center justify-between">
+							<span class="text-sm text-gray-600">Password strength:</span>
+							<span class="text-sm font-medium capitalize {passwordValidation.strength === 'weak' ? 'text-red-500' : passwordValidation.strength === 'medium' ? 'text-yellow-600' : 'text-green-600'}">
+								{passwordValidation.strength.replace('-', ' ')}
+							</span>
 						</div>
-						<span class="strength-text" style="color: {getStrengthColor(passwordValidation.strength)}">
-							{passwordValidation.strength.replace('-', ' ').toUpperCase()}
-						</span>
-					</div>
+						<div class="w-full bg-gray-200 rounded-full h-1">
+							<div class="h-1 rounded-full transition-all duration-300 {getStrengthColor(passwordValidation.strength)} {getStrengthWidth(passwordValidation.strength)}"></div>
+						</div>
 
-					{#if passwordValidation.errors.length > 0}
-						<div class="password-errors">
-							{#each passwordValidation.errors as error}
-								<div class="error-item">• {error}</div>
-							{/each}
-						</div>
-					{/if}
+						{#if passwordValidation.errors.length > 0}
+							<div class="bg-red-50 border-l-4 border-red-400 p-3 rounded">
+								{#each passwordValidation.errors as error}
+									<div class="text-sm text-red-700">• {error}</div>
+								{/each}
+							</div>
+						{/if}
+					</div>
 				{/if}
 			</div>
 
-			<div class="form-group">
-				<Textfield
+			<div class="space-y-2">
+				<TextField
 					bind:value={confirmPassword}
 					label="Confirm Password"
 					type={showPassword ? 'text' : 'password'}
 					required
-					style="width: 100%;"
+					fullWidth
 					disabled={loading}
+					error={confirmPassword && !passwordsMatch ? 'Passwords do not match' : ''}
 				/>
-				
-				{#if confirmPassword && !passwordsMatch}
-					<div class="password-mismatch">Passwords do not match</div>
-				{/if}
 			</div>
 
-			<FormField>
-				<input 
-					type="checkbox" 
-					bind:checked={showPassword} 
-					disabled={loading}
-				/>
-				<span slot="label">Show passwords</span>
-			</FormField>
+			<Checkbox
+				bind:checked={showPassword}
+				disabled={loading}
+				label="Show passwords"
+			/>
 
 			{#if error}
-				<div class="error-message">{error}</div>
+				<div class="bg-red-50 border-l-4 border-red-400 p-4 rounded">
+					<p class="text-red-700">{error}</p>
+				</div>
 			{/if}
 
-			<div class="wizard-actions">
-				<Button 
-					variant="raised" 
-					style="width: 100%; background-color: var(--mdc-theme-primary); color: var(--mdc-theme-on-primary);"
-					disabled={!canSubmit}
-				>
-					{#if loading}
-						<CircularProgress style="height: 20px; width: 20px;" indeterminate />
-					{:else}
-						Create Admin Account
-					{/if}
-				</Button>
-			</div>
+			<Button 
+				type="submit"
+				variant="contained"
+				color="primary"
+				fullWidth
+				disabled={!canSubmit}
+				size="large"
+			>
+				{#if loading}
+					<CircularProgress size="small" color="primary" />
+					<span class="ml-2">Creating Account...</span>
+				{:else}
+					Create Admin Account
+				{/if}
+			</Button>
 		</form>
 
-		<div class="security-notice">
-			<h4>Security Requirements:</h4>
-			<ul>
-				<li>Minimum 12 characters</li>
-				<li>Must include uppercase and lowercase letters</li>
-				<li>Must include numbers and special characters</li>
-				<li>No repeated characters or common patterns</li>
+		<div class="mt-8 bg-gray-50 border-l-4 border-primary-700 p-4 rounded">
+			<h4 class="text-sm font-medium text-primary-700 mb-3">Security Requirements:</h4>
+			<ul class="text-sm text-gray-600 space-y-1">
+				<li>• Minimum 12 characters</li>
+				<li>• Must include uppercase and lowercase letters</li>
+				<li>• Must include numbers and special characters</li>
+				<li>• No repeated characters or common patterns</li>
 			</ul>
 		</div>
 	</Card>
 </div>
-
-<style>
-	.wizard-container {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		min-height: 100vh;
-		padding: 20px;
-		background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
-	}
-
-	.wizard-header {
-		text-align: center;
-		margin-bottom: 32px;
-	}
-
-	.wizard-title {
-		font-size: 2rem;
-		font-weight: 500;
-		color: var(--mdc-theme-primary);
-		margin: 0 0 16px 0;
-	}
-
-	.wizard-subtitle {
-		font-size: 1rem;
-		color: #666;
-		margin: 0;
-		line-height: 1.5;
-	}
-
-	.wizard-form {
-		width: 100%;
-	}
-
-	.form-group {
-		margin-bottom: 24px;
-	}
-
-	.password-strength {
-		margin-top: 8px;
-		display: flex;
-		align-items: center;
-		gap: 12px;
-	}
-
-	.strength-bar {
-		flex: 1;
-		height: 4px;
-		background-color: #e0e0e0;
-		border-radius: 2px;
-		overflow: hidden;
-	}
-
-	.strength-fill {
-		height: 100%;
-		transition: width 0.3s ease, background-color 0.3s ease;
-		border-radius: 2px;
-	}
-
-	.strength-text {
-		font-size: 0.75rem;
-		font-weight: 500;
-		min-width: 80px;
-	}
-
-	.password-errors {
-		margin-top: 8px;
-		padding: 12px;
-		background-color: #ffebee;
-		border-radius: 4px;
-		border-left: 4px solid #f44336;
-	}
-
-	.error-item {
-		font-size: 0.875rem;
-		color: #d32f2f;
-		margin-bottom: 4px;
-	}
-
-	.error-item:last-child {
-		margin-bottom: 0;
-	}
-
-	.password-mismatch {
-		margin-top: 8px;
-		color: #f44336;
-		font-size: 0.875rem;
-	}
-
-	.error-message {
-		background-color: #ffebee;
-		color: #d32f2f;
-		padding: 12px;
-		border-radius: 4px;
-		margin-bottom: 16px;
-		border-left: 4px solid #f44336;
-	}
-
-	.wizard-actions {
-		margin-top: 32px;
-	}
-
-	.security-notice {
-		margin-top: 32px;
-		padding: 16px;
-		background-color: #f5f5f5;
-		border-radius: 8px;
-		border-left: 4px solid var(--mdc-theme-primary);
-	}
-
-	.security-notice h4 {
-		margin: 0 0 12px 0;
-		color: var(--mdc-theme-primary);
-		font-size: 0.875rem;
-		font-weight: 500;
-	}
-
-	.security-notice ul {
-		margin: 0;
-		padding-left: 20px;
-		font-size: 0.875rem;
-		color: #666;
-	}
-
-	.security-notice li {
-		margin-bottom: 4px;
-	}
-</style>

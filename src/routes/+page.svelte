@@ -3,7 +3,8 @@
 	import { checkAdminExists } from '$lib/api.js';
 	import AdminSetupWizard from '$lib/components/AdminSetupWizard.svelte';
 	import LoginForm from '$lib/components/LoginForm.svelte';
-	import CircularProgress from '@smui/circular-progress';
+	import CircularProgress from '$lib/components/CircularProgress.svelte';
+	import '../app.css';
 
 	let adminExists = null; // null = loading, true = exists, false = doesn't exist
 	let loading = true;
@@ -36,24 +37,12 @@
 </svelte:head>
 
 {#if loading}
-	<div class="loading-container">
-		<CircularProgress style="height: 40px; width: 40px;" indeterminate />
-		<p>Loading...</p>
+	<div class="min-h-screen flex flex-col items-center justify-center space-y-4 text-gray-600">
+		<CircularProgress size="large" />
+		<p class="text-lg">Loading...</p>
 	</div>
 {:else if adminExists === false}
 	<AdminSetupWizard on:adminCreated={handleAdminCreated} />
 {:else}
 	<LoginForm on:loginSuccess={handleLoginSuccess} />
 {/if}
-
-<style>
-	.loading-container {
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-		min-height: 100vh;
-		gap: 16px;
-		color: #666;
-	}
-</style>

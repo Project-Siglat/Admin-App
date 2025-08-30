@@ -1,9 +1,9 @@
 <script>
-	import Card from '@smui/card';
-	import Button from '@smui/button';
-	import Textfield from '@smui/textfield';
-	import FormField from '@smui/form-field';
-	import CircularProgress from '@smui/circular-progress';
+	import Card from './Card.svelte';
+	import Button from './Button.svelte';
+	import TextField from './TextField.svelte';
+	import Checkbox from './Checkbox.svelte';
+	import CircularProgress from './CircularProgress.svelte';
 	import { login } from '$lib/api.js';
 	import { createEventDispatcher } from 'svelte';
 
@@ -44,115 +44,61 @@
 	}
 </script>
 
-<div class="login-container">
-	<Card style="width: 100%; max-width: 400px; padding: 32px;">
-		<div class="login-header">
-			<h1 class="login-title">SIGLAT Admin</h1>
-			<p class="login-subtitle">Sign in to your admin account</p>
+<div class="min-h-screen flex items-center justify-center p-5 bg-gradient-to-br from-white to-gray-50">
+	<Card elevation={2} class="w-full max-w-sm p-8">
+		<div class="text-center mb-8">
+			<h1 class="text-3xl font-medium text-primary-700 mb-2">SIGLAT Admin</h1>
+			<p class="text-gray-600">Sign in to your admin account</p>
 		</div>
 
-		<form on:submit|preventDefault={handleSubmit} class="login-form">
-			<div class="form-group">
-				<Textfield
-					bind:value={email}
-					label="Email"
-					type="email"
-					required
-					style="width: 100%;"
-					disabled={loading}
-					on:keypress={handleKeyPress}
-				/>
-			</div>
+		<form on:submit|preventDefault={handleSubmit} class="space-y-6">
+			<TextField
+				bind:value={email}
+				label="Email"
+				type="email"
+				required
+				fullWidth
+				disabled={loading}
+				on:keypress={handleKeyPress}
+			/>
 
-			<div class="form-group">
-				<Textfield
-					bind:value={password}
-					label="Password"
-					type={showPassword ? 'text' : 'password'}
-					required
-					style="width: 100%;"
-					disabled={loading}
-					on:keypress={handleKeyPress}
-				/>
-			</div>
+			<TextField
+				bind:value={password}
+				label="Password"
+				type={showPassword ? 'text' : 'password'}
+				required
+				fullWidth
+				disabled={loading}
+				on:keypress={handleKeyPress}
+			/>
 
-			<FormField style="margin-bottom: 16px;">
-				<input 
-					type="checkbox" 
-					bind:checked={showPassword} 
-					disabled={loading}
-				/>
-				<span slot="label">Show password</span>
-			</FormField>
+			<Checkbox
+				bind:checked={showPassword}
+				disabled={loading}
+				label="Show password"
+			/>
 
 			{#if error}
-				<div class="error-message">{error}</div>
+				<div class="bg-red-50 border-l-4 border-red-400 p-4 rounded">
+					<p class="text-sm text-red-700">{error}</p>
+				</div>
 			{/if}
 
-			<div class="login-actions">
-				<Button 
-					variant="raised" 
-					style="width: 100%; background-color: var(--mdc-theme-primary); color: var(--mdc-theme-on-primary);"
-					disabled={!canSubmit}
-				>
-					{#if loading}
-						<CircularProgress style="height: 20px; width: 20px;" indeterminate />
-					{:else}
-						Sign In
-					{/if}
-				</Button>
-			</div>
+			<Button 
+				type="submit"
+				variant="contained"
+				color="primary"
+				fullWidth
+				disabled={!canSubmit}
+				size="large"
+			>
+				{#if loading}
+					<CircularProgress size="small" />
+					<span class="ml-2">Signing in...</span>
+				{:else}
+					Sign In
+				{/if}
+			</Button>
 		</form>
 	</Card>
 </div>
-
-<style>
-	.login-container {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		min-height: 100vh;
-		padding: 20px;
-		background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
-	}
-
-	.login-header {
-		text-align: center;
-		margin-bottom: 32px;
-	}
-
-	.login-title {
-		font-size: 2rem;
-		font-weight: 500;
-		color: var(--mdc-theme-primary);
-		margin: 0 0 8px 0;
-	}
-
-	.login-subtitle {
-		font-size: 1rem;
-		color: #666;
-		margin: 0;
-	}
-
-	.login-form {
-		width: 100%;
-	}
-
-	.form-group {
-		margin-bottom: 20px;
-	}
-
-	.error-message {
-		background-color: #ffebee;
-		color: #d32f2f;
-		padding: 12px;
-		border-radius: 4px;
-		margin-bottom: 16px;
-		border-left: 4px solid #f44336;
-		font-size: 0.875rem;
-	}
-
-	.login-actions {
-		margin-top: 24px;
-	}
-</style>
