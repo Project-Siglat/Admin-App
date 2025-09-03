@@ -10,7 +10,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: parseInt(process.env.VITE_DEV_PORT) || 5173,
+    port: 2424,
     host: process.env.VITE_DEV_HOST === 'true' || true
   }
 })

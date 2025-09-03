@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import Card from './Card';
-import Button from './Button';
-import TextField from './TextField';
-import Checkbox from './Checkbox';
-import CircularProgress from './CircularProgress';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext.js';
+import Card from './Card.js';
+import LoadingButton from './LoadingButton.tsx';
+import TextField from './TextField.js';
+import Checkbox from './Checkbox.js';
+import { login as apiLogin } from '../lib/api.js';
 
 interface LoginFormProps {
   onLoginSuccess?: (result: any) => void;
@@ -21,7 +23,12 @@ const LoginForm: React.FC<LoginFormProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
 
+  const from = (location.state as any)?.from?.pathname || '/dashboard';
   const canSubmit = email && password && !loading;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,10 +39,20 @@ const LoginForm: React.FC<LoginFormProps> = ({
     setError('');
 
     try {
-      // Simulate API call
-      const result = { token: 'mock-token', user: { email } };
-      localStorage.setItem('authToken', result.token);
+      const result = await apiLogin(email, password);
+      
+      // Update auth context - API returns camelCase
+      login({
+        userId: result.userId,
+        roleId: result.roleId,
+        email: email
+      });
+
+      // Call success callback if provided
       onLoginSuccess?.(result);
+
+      // Redirect to intended destination or dashboard
+      navigate(from, { replace: true });
     } catch (err: any) {
       setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
@@ -50,9 +67,16 @@ const LoginForm: React.FC<LoginFormProps> = ({
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-5 bg-gradient-to-br from-white to-gray-50">
+    <div className="min-h-screen flex items-center justify-center p-5 bg-gradient-to-br from-primary-50 to-secondary-50">
       <Card elevation={2} className="w-full max-w-sm p-8">
         <div className="text-center mb-8">
+          {/* Logo */}
+          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center mb-4 shadow-material">
+            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2L2 7v10c0 5.55 3.84 9.739 9 11 5.16-1.261 9-5.45 9-11V7l-10-5z"/>
+              <path d="M10 17l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" fill="white"/>
+            </svg>
+          </div>
           <h1 className="text-3xl font-medium text-primary-700 mb-2">{title}</h1>
           <p className="text-gray-600">{subtitle}</p>
         </div>
@@ -93,23 +117,28 @@ const LoginForm: React.FC<LoginFormProps> = ({
             </div>
           )}
 
-          <Button 
+          <LoadingButton 
             type="submit"
-            variant="contained"
-            color="primary"
-            fullWidth
+            variant="primary"
+            size="lg"
+            loading={loading}
             disabled={!canSubmit}
-            size="large"
+            loadingText="Signing in..."
+            className="w-full"
           >
-            {loading ? (
-              <>
-                <CircularProgress size="small" />
-                <span className="ml-2">Signing in...</span>
-              </>
-            ) : (
-              'Sign In'
-            )}
-          </Button>
+            Sign In
+          </LoadingButton>
+
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => navigate('/forgot-password')}
+              className="text-sm text-blue-600 hover:text-blue-500 underline"
+              disabled={loading}
+            >
+              Forgot your password?
+            </button>
+          </div>
         </form>
       </Card>
     </div>
