@@ -87,18 +87,36 @@ const ProfileManagement: React.FC = () => {
         try {
             setLoading(true);
             const data = await getProfile();
-            setProfile(data);
-            setEditProfile({
-                firstName: data.firstName || '',
-                middleName: data.middleName || '',
-                lastName: data.lastName || '',
-                email: data.email || '',
-                phoneNumber: data.phoneNumber || '',
-                address: data.address || '',
-                gender: data.gender || '',
-                dateOfBirth: data.dateOfBirth ? data.dateOfBirth.split('T')[0] : ''
+            
+            setProfile({
+                id: data.Id || data.id,
+                firstName: data.FirstName || data.firstName || '',
+                middleName: data.MiddleName || data.middleName || '',
+                lastName: data.LastName || data.lastName || '',
+                email: data.Email || data.email || '',
+                phoneNumber: data.PhoneNumber || data.phoneNumber || '',
+                address: data.Address || data.address || '',
+                gender: data.Gender || data.gender || '',
+                dateOfBirth: data.DateOfBirth || data.dateOfBirth || '',
+                roleId: data.RoleId || data.roleId || 0,
+                isEmailVerified: data.IsEmailVerified || data.isEmailVerified || false,
+                isPhoneVerified: data.IsPhoneVerified || data.isPhoneVerified || false,
+                createdAt: data.CreatedAt || data.createdAt || ''
             });
+            
+            setEditProfile({
+                firstName: data.FirstName || data.firstName || '',
+                middleName: data.MiddleName || data.middleName || '',
+                lastName: data.LastName || data.lastName || '',
+                email: data.Email || data.email || '',
+                phoneNumber: data.PhoneNumber || data.phoneNumber || '',
+                address: data.Address || data.address || '',
+                gender: data.Gender || data.gender || '',
+                dateOfBirth: data.DateOfBirth || data.dateOfBirth ? (data.DateOfBirth || data.dateOfBirth).split('T')[0] : ''
+            });
+            
         } catch (error) {
+            console.error('ProfileManagement - failed to load profile:', error);
             showError('Failed to load profile data');
         } finally {
             setLoading(false);
@@ -141,9 +159,6 @@ const ProfileManagement: React.FC = () => {
         try {
             setSaving(true);
             
-            console.log('Current profile data:', profile);
-            console.log('Edit profile data:', editProfile);
-            
             // The API controller fetches the user first and updates fields, 
             // so we only need to send the fields we want to update
             const profileUpdateData = {
@@ -159,8 +174,6 @@ const ProfileManagement: React.FC = () => {
                 // Add a placeholder hashPass to satisfy validation - API will override this with existing hash
                 hashPass: "placeholder"
             };
-            
-            console.log('Sending profile update data:', profileUpdateData);
             
             // Call the real API to update profile
             await updateProfile(profileUpdateData);
@@ -422,12 +435,21 @@ const ProfileManagement: React.FC = () => {
                                         fullWidth
                                     />
 
-                                    <TextField
-                                        label="Gender"
-                                        value={editProfile.gender}
-                                        onChange={(value) => handleInputChange('gender', value)}
-                                        fullWidth
-                                    />
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Gender <span className="text-red-500">*</span>
+                                        </label>
+                                        <select
+                                            value={editProfile.gender}
+                                            onChange={(e) => handleInputChange('gender', e.target.value)}
+                                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                            required
+                                        >
+                                            <option value="">Select Gender</option>
+                                            <option value="Male">Male</option>
+                                            <option value="Female">Female</option>
+                                        </select>
+                                    </div>
 
                                     <TextField
                                         label="Date of Birth"

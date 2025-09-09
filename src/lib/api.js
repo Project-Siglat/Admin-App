@@ -1,9 +1,11 @@
 // API utility functions
+import { TokenStorage } from './tokenStorage.js';
+
 const API_BASE_URL = 'http://localhost:5000/api/v1';
 
-// Get JWT token from localStorage
+// Get JWT token from storage (localStorage + cookies)
 const getAuthToken = () => {
-    return localStorage.getItem('authToken');
+    return TokenStorage.getToken();
 };
 
 // Decode JWT token to extract claims
@@ -26,17 +28,13 @@ export async function apiRequest(endpoint, options = {}) {
     let token = getAuthToken();
     
     // Check if token is expired and try to refresh
-    const tokenExpiresAt = localStorage.getItem('tokenExpiresAt');
-    const now = new Date();
-    if (token && tokenExpiresAt && new Date(tokenExpiresAt) <= now) {
+    if (token && TokenStorage.isTokenExpired()) {
         try {
             await refreshAuthToken();
             token = getAuthToken(); // Get the new token
         } catch (error) {
             // Refresh failed, clear tokens
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('refreshToken');
-            localStorage.removeItem('tokenExpiresAt');
+            TokenStorage.clearTokens();
             throw new Error('Session expired. Please login again.');
         }
     }
@@ -76,9 +74,7 @@ export async function apiRequest(endpoint, options = {}) {
                         return await apiRequest(endpoint, { ...options, isRetry: true });
                     } catch (error) {
                         // Refresh failed, clear tokens
-                        localStorage.removeItem('authToken');
-                        localStorage.removeItem('refreshToken');
-                        localStorage.removeItem('tokenExpiresAt');
+                        TokenStorage.clearTokens();
                         throw new Error('Session expired. Please login again.');
                     }
                 }
@@ -159,20 +155,22 @@ export async function login(email, password) {
         body: JSON.stringify({ email, password })
     });
     
-    console.log('Login API response:', result);
-    
-    // Store both tokens in localStorage - API returns camelCase
-    if (result.accessToken) {
-        localStorage.setItem('authToken', result.accessToken);
-        localStorage.setItem('refreshToken', result.refreshToken);
-        localStorage.setItem('tokenExpiresAt', result.accessTokenExpiresAt);
+    // Store tokens using enhanced storage (localStorage + cookies)
+    if (result.AccessToken || result.accessToken) {
+        const token = result.AccessToken || result.accessToken;
+        const refreshToken = result.RefreshToken || result.refreshToken;
+        const expiresAt = result.AccessTokenExpiresAt || result.accessTokenExpiresAt;
+        const refreshExpiresAt = result.RefreshTokenExpiresAt || result.refreshTokenExpiresAt;
+
+        TokenStorage.setToken(token, expiresAt);
+        TokenStorage.setRefreshToken(refreshToken, refreshExpiresAt);
     }
     
     return result;
 }
 
 async function refreshAuthToken() {
-    const refreshToken = localStorage.getItem('refreshToken');
+    const refreshToken = TokenStorage.getRefreshToken();
     if (!refreshToken) {
         throw new Error('No refresh token available');
     }
@@ -191,10 +189,14 @@ async function refreshAuthToken() {
 
     const result = await response.json();
     
-    // Store new tokens - API returns camelCase
-    localStorage.setItem('authToken', result.accessToken);
-    localStorage.setItem('refreshToken', result.refreshToken);
-    localStorage.setItem('tokenExpiresAt', result.accessTokenExpiresAt);
+    // Store new tokens using enhanced storage
+    const token = result.AccessToken || result.accessToken;
+    const newRefreshToken = result.RefreshToken || result.refreshToken;
+    const expiresAt = result.AccessTokenExpiresAt || result.accessTokenExpiresAt;
+    const refreshExpiresAt = result.RefreshTokenExpiresAt || result.refreshTokenExpiresAt;
+
+    TokenStorage.setToken(token, expiresAt);
+    TokenStorage.setRefreshToken(newRefreshToken, refreshExpiresAt);
     
     return result;
 }
@@ -206,7 +208,7 @@ export async function logout() {
         });
         
         // Revoke refresh token
-        const refreshToken = localStorage.getItem('refreshToken');
+        const refreshToken = TokenStorage.getRefreshToken();
         if (refreshToken) {
             await fetch(`${API_BASE_URL}/auth/revoke`, {
                 method: 'POST',
@@ -218,15 +220,12 @@ export async function logout() {
         }
     } finally {
         // Always clear tokens even if logout API fails
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('tokenExpiresAt');
+        TokenStorage.clearTokens();
     }
 }
 
 export async function getProfile() {
     const result = await apiRequest('/auth/profile');
-    console.log('Profile API response:', result);
     return result;
 }
 

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getProfile, logout as apiLogout } from '../lib/api.js';
+import { TokenStorage } from '../lib/tokenStorage.js';
 
 interface User {
   id: string;
@@ -7,6 +8,7 @@ interface User {
   lastName: string;
   email: string;
   roleId: number;
+  role: string; // Add role name
 }
 
 interface AuthContextType {
@@ -42,16 +44,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const checkAuthStatus = async () => {
     try {
-      // Check if we have a token in localStorage
-      const token = localStorage.getItem('authToken');
+      // Check if we have a token in storage (localStorage + cookies)
+      const token = TokenStorage.getToken();
       if (!token) {
-        console.log('No token found in localStorage');
         setUser(null);
         setLoading(false);
         return;
       }
 
-      console.log('Token found, validating with server...');
       
       // Add timeout to prevent infinite loading
       const timeoutPromise = new Promise((_, reject) => 
@@ -61,8 +61,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Validate token by fetching profile
       const profilePromise = getProfile();
       const profile = await Promise.race([profilePromise, timeoutPromise]);
-      console.log('Token validation successful, user authenticated');
-      console.log('Raw Profile API response:', profile);
       
       // Check if profile contains required fields
       if (!profile.Id || !profile.Email) {
@@ -76,9 +74,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         roleId = Number(roleId);
       }
       
-      // Always try to extract roleId from JWT as primary source
+      // Extract role name from profile or JWT
+      let roleName = profile.Role || '';
+      
+      // Always try to extract role info from JWT as primary source
       try {
-        const token = localStorage.getItem('authToken');
+        const token = TokenStorage.getToken();
         if (token) {
           const base64Url = token.split('.')[1];
           const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -87,31 +88,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }).join(''));
           const payload = JSON.parse(jsonPayload);
           
-          console.log('JWT payload:', payload);
           if (payload.roleId) {
             roleId = parseInt(payload.roleId, 10);
-            console.log('Extracted roleId from JWT:', roleId);
+          }
+          if (payload.role) {
+            roleName = payload.role;
           }
         }
       } catch (error) {
-        console.error('Error extracting roleId from JWT:', error);
+        console.error('Error extracting role info from JWT:', error);
       }
       
       const userInfo = {
-        id: profile.Id,
-        firstName: profile.FirstName || '',
-        lastName: profile.LastName || '',
-        email: profile.Email,
-        roleId: roleId || null
+        id: profile.Id || profile.id,
+        firstName: profile.FirstName || profile.firstName || '',
+        lastName: profile.LastName || profile.lastName || '',
+        email: profile.Email || profile.email,
+        roleId: roleId || null,
+        role: roleName || 'user'
       };
-      console.log('Transformed user info:', userInfo);
-      console.log('User role ID:', userInfo.roleId, typeof userInfo.roleId);
       setUser(userInfo);
     } catch (error) {
       // Token is invalid or expired
-      console.log('Token validation failed:', error);
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
+      TokenStorage.clearTokens();
       setUser(null);
     } finally {
       setLoading(false);
@@ -119,7 +118,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const login = (userData: any) => {
-    console.log('Login successful, setting user state');
+    
+    // Extract role info from userData and JWT token
+    let roleId = userData.roleId;
+    let roleName = userData.role || '';
+    
+    try {
+      const token = TokenStorage.getToken();
+      if (token) {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        const payload = JSON.parse(jsonPayload);
+        
+        // Try different possible claim names for roleId and role
+        roleId = roleId || payload.roleId || payload.role || payload.RoleId || payload.Role;
+        roleName = roleName || payload.role || payload.Role || '';
+        
+        if (typeof roleId === 'string' && !isNaN(Number(roleId))) {
+          roleId = Number(roleId);
+        }
+        
+      }
+    } catch (error) {
+      console.error('Error extracting role info from JWT during login:', error);
+    }
     
     // The token is already stored in localStorage by the API client
     // Just update the user state with the profile data
@@ -128,8 +153,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       firstName: userData.firstName || '',
       lastName: userData.lastName || '',
       email: userData.email || '',
-      roleId: userData.roleId
+      roleId: roleId || 1, // Default to admin role if no roleId found
+      role: roleName || 'admin' // Default to admin role
     };
+    
     setUser(userInfo);
     
     // Optionally store user info in localStorage for quick access
@@ -137,7 +164,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = async () => {
-    console.log('Logging out...');
     try {
       // Call logout API to mark session as inactive
       await apiLogout();
@@ -146,34 +172,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       // Always clear local state even if API fails
       setUser(null);
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      console.log('Logout complete, local state cleared');
+      TokenStorage.clearTokens();
     }
   };
 
-  const isAuthenticated = !!user && !!localStorage.getItem('authToken');
-  const isAdmin = !!user && user.roleId === 1; // Admin role has roleId = 1
+  const isAuthenticated = !!user && TokenStorage.hasToken();
+  const isAdmin = !!user && (user.roleId === 1 || user.role?.toLowerCase() === 'admin');
   
-  // Add additional debug info
-  if (user) {
-    console.log('User role check:', {
-      roleId: user.roleId,
-      roleIdType: typeof user.roleId,
-      isRoleId1: user.roleId === 1,
-      isAdmin
-    });
-  }
-
-  console.log('AuthContext state:', { 
-    user: user?.email, 
-    roleId: user?.roleId,
-    isAuthenticated, 
-    isAdmin,
-    loading,
-    hasToken: !!localStorage.getItem('authToken')
-  });
-
   const value = {
     user,
     loading,

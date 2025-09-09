@@ -41,10 +41,11 @@ const LoginForm: React.FC<LoginFormProps> = ({
     try {
       const result = await apiLogin(email, password);
       
-      // Update auth context - API returns camelCase
+      // Update auth context - API returns PascalCase
       login({
-        userId: result.userId,
-        roleId: result.roleId,
+        userId: result.UserId || result.userId,
+        roleId: result.RoleId || result.roleId,
+        role: result.Role || result.role, // Add role name
         email: email
       });
 

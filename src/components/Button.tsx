@@ -1,9 +1,9 @@
 import React from 'react';
 
 interface ButtonProps {
-  variant?: 'contained' | 'outlined' | 'text';
+  variant?: 'contained' | 'outlined' | 'text' | 'secondary' | 'danger';
   color?: 'primary' | 'secondary';
-  size?: 'small' | 'medium' | 'large';
+  size?: 'small' | 'medium' | 'large' | 'sm';
   disabled?: boolean;
   type?: 'button' | 'submit' | 'reset';
   fullWidth?: boolean;
@@ -27,6 +27,7 @@ const Button: React.FC<ButtonProps> = ({
   
   const sizeClasses = {
     small: 'px-3 py-1.5 text-sm',
+    sm: 'px-3 py-1.5 text-sm',
     medium: 'px-4 py-2 text-sm',
     large: 'px-6 py-3 text-base'
   };
@@ -43,6 +44,14 @@ const Button: React.FC<ButtonProps> = ({
     text: {
       primary: 'text-primary-700 hover:bg-primary-50 focus:ring-primary-500',
       secondary: 'text-secondary-500 hover:bg-secondary-50 focus:ring-secondary-400'
+    },
+    secondary: {
+      primary: 'bg-gray-500 text-white hover:bg-gray-600 focus:ring-gray-400 shadow-material',
+      secondary: 'bg-gray-500 text-white hover:bg-gray-600 focus:ring-gray-400 shadow-material'
+    },
+    danger: {
+      primary: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-material',
+      secondary: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-material'
     }
   };
 

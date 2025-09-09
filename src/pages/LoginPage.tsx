@@ -28,7 +28,6 @@ const LoginPage: React.FC = () => {
   };
 
   const handleLoginSuccess = (result: any) => {
-    console.log('Login successful:', result);
     // Navigation is now handled within LoginForm component
   };
 

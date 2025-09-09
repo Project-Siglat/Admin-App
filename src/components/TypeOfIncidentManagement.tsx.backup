@@ -1,0 +1,464 @@
+import React, { useState, useEffect } from 'react';
+import Card from './Card.tsx';
+import Button from './Button.tsx';
+import TextField from './TextField.tsx';
+import Checkbox from './Checkbox.tsx';
+import { SkeletonTable } from './Skeleton.tsx';
+import LoadingOverlay from './LoadingOverlay.tsx';
+import ConfirmationModal from './ConfirmationModal.tsx';
+import { useAuth } from '../contexts/AuthContext.tsx';
+import { useToast } from '../contexts/ToastContext.tsx';
+import { TokenStorage } from '../lib/tokenStorage.js';
+
+interface TypeOfIncident {
+  id: string;
+  nameOfIncident: string;
+  description?: string;
+  addedDateTime: string;
+  whoAddedItID: string;
+  isActive: boolean;
+  isBFPTrue: boolean;
+  isPNPTrue: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const TypeOfIncidentManagement: React.FC = () => {
+  const { user: currentUser } = useAuth();
+  const { showSuccess, showError } = useToast();
+  const [incidents, setIncidents] = useState<TypeOfIncident[]>([]);
+  const [filteredIncidents, setFilteredIncidents] = useState<TypeOfIncident[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingIncident, setEditingIncident] = useState<TypeOfIncident | null>(null);
+  
+  // Confirmation modal state
+  const [confirmationModal, setConfirmationModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmText: '',
+    confirmVariant: 'contained' as 'secondary' | 'outlined' | 'contained' | 'text' | 'danger',
+    onConfirm: () => {}
+  });
+  
+  const [formData, setFormData] = useState({
+    nameOfIncident: '',
+    description: '',
+    isActive: true,
+    isBFPTrue: false,
+    isPNPTrue: false
+  });
+
+  const fetchIncidents = async () => {
+    setLoading(true);
+    try {
+      const token = TokenStorage.getToken();
+      const response = await fetch('http://localhost:5000/api/v1/TypeOfIncident/all', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Transform API response (PascalCase) to expected format (camelCase)
+        const transformedData = data.map((incident: any) => ({
+          id: incident.Id || incident.id,
+          nameOfIncident: incident.NameOfIncident || incident.nameOfIncident,
+          description: incident.Description || incident.description,
+          addedDateTime: incident.AddedDateTime || incident.addedDateTime,
+          whoAddedItID: incident.WhoAddedItID || incident.whoAddedItID,
+          isActive: incident.IsActive !== undefined ? incident.IsActive : incident.isActive,
+          isBFPTrue: incident.isBFPTrue !== undefined ? incident.isBFPTrue : false,
+          isPNPTrue: incident.isPNPTrue !== undefined ? incident.isPNPTrue : false,
+          createdAt: incident.CreatedAt || incident.createdAt,
+          updatedAt: incident.UpdatedAt || incident.updatedAt
+        }));
+        
+        setIncidents(transformedData);
+        setFilteredIncidents(transformedData);
+      } else {
+        showError('Failed to fetch incident types');
+      }
+    } catch (error) {
+      console.error('Error fetching incidents:', error);
+      showError('Error fetching incident types. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchIncidents();
+  }, []);
+
+  useEffect(() => {
+    const filtered = incidents.filter(incident =>
+      (incident.nameOfIncident && incident.nameOfIncident.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (incident.description && incident.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+    setFilteredIncidents(filtered);
+  }, [searchTerm, incidents]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const token = TokenStorage.getToken();
+      const url = editingIncident 
+        ? `http://localhost:5000/api/v1/TypeOfIncident/${editingIncident.id}`
+        : 'http://localhost:5000/api/v1/TypeOfIncident';
+      
+      const method = editingIncident ? 'PUT' : 'POST';
+      
+      const payload = editingIncident ? {
+        id: editingIncident.id,
+        ...formData,
+        whoAddedItID: currentUser?.id || ''
+      } : {
+        ...formData,
+        whoAddedItID: currentUser?.id || ''
+      };
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        await fetchIncidents();
+        setIsModalOpen(false);
+        resetForm();
+        showSuccess(`Incident type ${editingIncident ? 'updated' : 'created'} successfully`);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        showError(`Failed to ${editingIncident ? 'update' : 'create'} incident type: ${errorData.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error saving incident:', error);
+      showError(`Error ${editingIncident ? 'updating' : 'creating'} incident type. Please try again.`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = (incident: TypeOfIncident) => {
+    setEditingIncident(incident);
+    setFormData({
+      nameOfIncident: incident.nameOfIncident || '',
+      description: incident.description || '',
+      isActive: incident.isActive === true,
+      isBFPTrue: incident.isBFPTrue === true,
+      isPNPTrue: incident.isPNPTrue === true
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    setConfirmationModal({
+      isOpen: true,
+      title: 'Deactivate Incident Type',
+      message: 'Are you sure you want to deactivate this incident type? It will be marked as inactive.',
+      confirmText: 'Deactivate',
+      confirmVariant: 'danger',
+      onConfirm: () => performDelete(id)
+    });
+  };
+
+  const performDelete = async (id: string) => {
+    setConfirmationModal(prev => ({ ...prev, isOpen: false }));
+    setLoading(true);
+    try {
+      const token = TokenStorage.getToken();
+      const response = await fetch(`http://localhost:5000/api/v1/TypeOfIncident/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        await fetchIncidents();
+        showSuccess('Incident type deactivated successfully');
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Failed to delete incident:', errorData);
+        showError(`Failed to deactivate incident type: ${errorData.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error deleting incident:', error);
+      showError('Error deactivating incident type. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReactivate = async (id: string) => {
+    setConfirmationModal({
+      isOpen: true,
+      title: 'Reactivate Incident Type',
+      message: 'Are you sure you want to reactivate this incident type?',
+      confirmText: 'Reactivate',
+      confirmVariant: 'contained',
+      onConfirm: () => performReactivate(id)
+    });
+  };
+
+  const performReactivate = async (id: string) => {
+    setConfirmationModal(prev => ({ ...prev, isOpen: false }));
+    setLoading(true);
+    try {
+      const token = TokenStorage.getToken();
+      const response = await fetch(`http://localhost:5000/api/v1/TypeOfIncident/${id}/reactivate`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        await fetchIncidents();
+        showSuccess('Incident type reactivated successfully');
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Failed to reactivate incident:', errorData);
+        showError(`Failed to reactivate incident type: ${errorData.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error reactivating incident:', error);
+      showError('Error reactivating incident type. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      nameOfIncident: '',
+      description: '',
+      isActive: true,
+      isBFPTrue: false,
+      isPNPTrue: false
+    });
+    setEditingIncident(null);
+  };
+
+  const openModal = () => {
+    resetForm();
+    setIsModalOpen(true);
+  };
+
+  return (
+    <div className="space-y-6">
+      <LoadingOverlay isVisible={loading}>
+        <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-900">Type of Incident Management</h1>
+        <Button onClick={openModal}>
+          Add New Incident Type
+        </Button>
+      </div>
+
+      <Card>
+        <div className="mb-4">
+          <TextField
+            label="Search incidents..."
+            value={searchTerm}
+            onChange={(value) => setSearchTerm(value)}
+            placeholder="Search by name or description"
+          />
+        </div>
+
+        {loading ? (
+          <SkeletonTable />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Description
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    BFP
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    PNP
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredIncidents.map((incident) => (
+                  <tr key={incident.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {incident.nameOfIncident}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                      {incident.description || 'No description'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        incident.isBFPTrue === true 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {incident.isBFPTrue === true ? 'Yes' : 'No'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        incident.isPNPTrue === true 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {incident.isPNPTrue === true ? 'Yes' : 'No'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        incident.isActive === true 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {incident.isActive === true ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleEdit(incident)}
+                      >
+                        Edit
+                      </Button>
+                      {incident.isActive === true ? (
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => handleDelete(incident.id)}
+                        >
+                          Deactivate
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="contained"
+                          size="sm"
+                          onClick={() => handleReactivate(incident.id)}
+                        >
+                          Reactivate
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            
+            {filteredIncidents.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                {searchTerm ? 'No incidents found matching your search.' : 'No incident types found.'}
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
+      </LoadingOverlay>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                {editingIncident ? 'Edit Incident Type' : 'Add New Incident Type'}
+              </h3>
+              
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <TextField
+                  label="Incident Name"
+                  value={formData.nameOfIncident}
+                  onChange={(value) => setFormData({ ...formData, nameOfIncident: value })}
+                  required
+                />
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    rows={3}
+                    placeholder="Optional description"
+                  />
+                </div>
+
+                <Checkbox
+                  label="Active"
+                  checked={formData.isActive}
+                  onChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                />
+
+                <Checkbox
+                  label="Bureau of Fire Protection (BFP)"
+                  checked={formData.isBFPTrue}
+                  onChange={(checked) => setFormData({ ...formData, isBFPTrue: checked })}
+                />
+
+                <Checkbox
+                  label="Philippine National Police (PNP)"
+                  checked={formData.isPNPTrue}
+                  onChange={(checked) => setFormData({ ...formData, isPNPTrue: checked })}
+                />
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setIsModalOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={loading}>
+                    {editingIncident ? 'Update' : 'Create'}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmationModal.isOpen}
+        title={confirmationModal.title}
+        message={confirmationModal.message}
+        confirmText={confirmationModal.confirmText}
+        confirmVariant={confirmationModal.confirmVariant}
+        onConfirm={confirmationModal.onConfirm}
+        onCancel={() => setConfirmationModal(prev => ({ ...prev, isOpen: false }))}
+        loading={loading}
+      />
+    </div>
+  );
+};
+
+export default TypeOfIncidentManagement;
