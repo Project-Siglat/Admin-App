@@ -12,6 +12,8 @@ RUN pnpm run build
 
 FROM nginx
 
+RUN apt-get update && apt-get install -y curl wget && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /app/dist /usr/share/nginx/html
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
