@@ -257,7 +257,8 @@ const TypeOfIncidentManagement: React.FC = () => {
     setLoading(true);
     try {
       const token = TokenStorage.getToken();
-      const response = await fetch('http://localhost:5000/api/v1/TypeOfIncident/all', {
+      const API_BASE_URL = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:5000'}/api/v1`;
+      const response = await fetch(`${API_BASE_URL}/TypeOfIncident/all`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -311,9 +312,10 @@ const TypeOfIncidentManagement: React.FC = () => {
 
     try {
       const token = TokenStorage.getToken();
-      const url = editingIncident 
-        ? `http://localhost:5000/api/v1/TypeOfIncident/${editingIncident.id}`
-        : 'http://localhost:5000/api/v1/TypeOfIncident';
+      const API_BASE_URL = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:5000'}/api/v1`;
+      const url = editingIncident
+        ? `${API_BASE_URL}/TypeOfIncident/${editingIncident.id}`
+        : `${API_BASE_URL}/TypeOfIncident`;
       
       const method = editingIncident ? 'PUT' : 'POST';
       
@@ -378,7 +380,8 @@ const TypeOfIncidentManagement: React.FC = () => {
     setLoading(true);
     try {
       const token = TokenStorage.getToken();
-      const response = await fetch(`http://localhost:5000/api/v1/TypeOfIncident/${id}`, {
+      const API_BASE_URL = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:5000'}/api/v1`;
+      const response = await fetch(`${API_BASE_URL}/TypeOfIncident/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -414,7 +417,8 @@ const TypeOfIncidentManagement: React.FC = () => {
     setLoading(true);
     try {
       const token = TokenStorage.getToken();
-      const response = await fetch(`http://localhost:5000/api/v1/TypeOfIncident/${id}/reactivate`, {
+      const API_BASE_URL = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:5000'}/api/v1`;
+      const response = await fetch(`${API_BASE_URL}/TypeOfIncident/${id}/reactivate`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`

@@ -23,7 +23,8 @@ const ForgotPasswordPage: React.FC = () => {
     setLoading(true);
     try {
       // TODO: Replace with actual API call
-      const response = await fetch('http://localhost:5000/api/v1/auth/forgot-password', {
+      const API_BASE_URL = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:5000'}/api/v1`;
+      const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -50,7 +51,8 @@ const ForgotPasswordPage: React.FC = () => {
     setLoading(true);
     try {
       // TODO: Replace with actual API call
-      const response = await fetch('http://localhost:5000/api/v1/auth/verify-forgot-password-otp', {
+      const API_BASE_URL = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:5000'}/api/v1`;
+      const response = await fetch(`${API_BASE_URL}/auth/verify-forgot-password-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, verificationCode: otpCode })
@@ -87,7 +89,8 @@ const ForgotPasswordPage: React.FC = () => {
     setLoading(true);
     try {
       // TODO: Replace with actual API call
-      const response = await fetch('http://localhost:5000/api/v1/auth/reset-password', {
+      const API_BASE_URL = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:5000'}/api/v1`;
+      const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
