@@ -11,7 +11,7 @@ interface EnvironmentConfig {
 
 // Export environment configuration
 export const ENV_CONFIG: EnvironmentConfig = {
-  apiUrl: import.meta.env.VITE_PUBLIC_API_URL || import.meta.env.PUBLIC_API_URL,
+  apiUrl: 'https://api.siglat.app',
   devHost: import.meta.env.VITE_DEV_HOST === 'true',
   devPort: import.meta.env.VITE_DEV_PORT ? parseInt(import.meta.env.VITE_DEV_PORT, 10) : undefined,
   appName: import.meta.env.VITE_APP_NAME,
