@@ -169,7 +169,7 @@ const ProfileManagement: React.FC = () => {
                 gender: editProfile.gender,
                 phoneNumber: editProfile.phoneNumber,
                 email: editProfile.email,
-                roleId: profile?.roleId || 1,
+                roleId: profile?.roleId || 2,
                 dateOfBirth: editProfile.dateOfBirth ? new Date(editProfile.dateOfBirth).toISOString() : profile?.dateOfBirth,
                 // Add a placeholder hashPass to satisfy validation - API will override this with existing hash
                 hashPass: "placeholder"

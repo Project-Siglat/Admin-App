@@ -1,7 +1,8 @@
 // API utility functions
 import { TokenStorage } from './tokenStorage.js';
+import { ENV_CONFIG } from '../config/env.ts';
 
-const API_BASE_URL = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:5000'}/api/v1`;
+const API_BASE_URL = `${ENV_CONFIG.apiUrl}/api/v1`;
 
 // Get JWT token from storage (localStorage + cookies)
 const getAuthToken = () => {

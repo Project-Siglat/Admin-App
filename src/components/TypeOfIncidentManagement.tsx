@@ -257,7 +257,7 @@ const TypeOfIncidentManagement: React.FC = () => {
     setLoading(true);
     try {
       const token = TokenStorage.getToken();
-      const API_BASE_URL = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:5000'}/api/v1`;
+      const API_BASE_URL = `${import.meta.env.PUBLIC_API_URL}/api/v1`;
       const response = await fetch(`${API_BASE_URL}/TypeOfIncident/all`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -312,7 +312,7 @@ const TypeOfIncidentManagement: React.FC = () => {
 
     try {
       const token = TokenStorage.getToken();
-      const API_BASE_URL = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:5000'}/api/v1`;
+      const API_BASE_URL = `${import.meta.env.PUBLIC_API_URL}/api/v1`;
       const url = editingIncident
         ? `${API_BASE_URL}/TypeOfIncident/${editingIncident.id}`
         : `${API_BASE_URL}/TypeOfIncident`;
@@ -380,7 +380,7 @@ const TypeOfIncidentManagement: React.FC = () => {
     setLoading(true);
     try {
       const token = TokenStorage.getToken();
-      const API_BASE_URL = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:5000'}/api/v1`;
+      const API_BASE_URL = `${import.meta.env.PUBLIC_API_URL}/api/v1`;
       const response = await fetch(`${API_BASE_URL}/TypeOfIncident/${id}`, {
         method: 'DELETE',
         headers: {
@@ -417,7 +417,7 @@ const TypeOfIncidentManagement: React.FC = () => {
     setLoading(true);
     try {
       const token = TokenStorage.getToken();
-      const API_BASE_URL = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:5000'}/api/v1`;
+      const API_BASE_URL = `${import.meta.env.PUBLIC_API_URL}/api/v1`;
       const response = await fetch(`${API_BASE_URL}/TypeOfIncident/${id}/reactivate`, {
         method: 'PATCH',
         headers: {

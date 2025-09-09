@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getProfile, logout as apiLogout } from '../lib/api.js';
 import { TokenStorage } from '../lib/tokenStorage.js';
+import { ENV_CONFIG } from '../config/env.ts';
 
 interface User {
   id: string;
@@ -55,7 +56,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Add timeout to prevent infinite loading
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Auth validation timeout')), 10000)
+        setTimeout(() => reject(new Error('Auth validation timeout')), ENV_CONFIG.apiTimeout)
       );
       
       // Validate token by fetching profile
@@ -153,7 +154,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       firstName: userData.firstName || '',
       lastName: userData.lastName || '',
       email: userData.email || '',
-      roleId: roleId || 1, // Default to admin role if no roleId found
+      roleId: roleId || ENV_CONFIG.defaultRoleId, // Default role from environment
       role: roleName || 'admin' // Default to admin role
     };
     
@@ -177,7 +178,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const isAuthenticated = !!user && TokenStorage.hasToken();
-  const isAdmin = !!user && (user.roleId === 1 || user.role?.toLowerCase() === 'admin');
+  const isAdmin = !!user && (user.roleId === ENV_CONFIG.adminRoleId || user.role?.toLowerCase() === 'admin');
   
   const value = {
     user,

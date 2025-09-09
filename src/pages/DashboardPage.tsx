@@ -479,7 +479,7 @@ const DashboardPage: React.FC = () => {
                                 Welcome, {profile?.firstName || user?.firstName}!
                             </p>
                             <p className={styles.userRole}>
-                                {getRoleName(profile?.roleId || user?.roleId || 1)}
+                                {getRoleName(profile?.roleId || user?.roleId || 2)}
                             </p>
                         </div>
                         
@@ -530,7 +530,7 @@ const DashboardPage: React.FC = () => {
                             {profile?.firstName || user?.firstName} {profile?.lastName || user?.lastName}
                         </div>
                         <div className={styles.sidebarUserRole}>
-                            {getRoleName(profile?.roleId || user?.roleId || 1)}
+                            {getRoleName(profile?.roleId || user?.roleId || 2)}
                         </div>
                     </div>
 
