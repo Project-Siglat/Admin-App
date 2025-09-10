@@ -425,8 +425,9 @@ const ContactCRUD: React.FC = () => {
         await fetchContacts();
         showSuccess('Contact updated successfully');
       } else {
-        // Create new contact - don't include ID, let server generate it
+        // Create new contact - generate GUID for ID
         const newContactData = {
+          id: crypto.randomUUID(),
           name: formData.name,
           description: formData.description,
           type: formData.type,

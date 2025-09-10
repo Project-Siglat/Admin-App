@@ -256,17 +256,21 @@ export async function getContacts() {
     return await apiRequest('/admin/contact');
 }
 
-export async function createContact(contact) {
+export async function createContact(contactData) {
     return await apiRequest('/admin/contact', {
         method: 'POST',
-        body: JSON.stringify(contact)
+        body: JSON.stringify({
+            contact: contactData
+        })
     });
 }
 
-export async function updateContact(contact) {
+export async function updateContact(contactData) {
     return await apiRequest('/admin/contact', {
         method: 'PUT',
-        body: JSON.stringify(contact)
+        body: JSON.stringify({
+            contact: contactData
+        })
     });
 }
 
