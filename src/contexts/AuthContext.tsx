@@ -53,13 +53,53 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
 
+      // Check if token is expired
+      if (TokenStorage.isTokenExpired()) {
+        TokenStorage.clearTokens();
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      // Try to get user info from stored token first
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        const payload = JSON.parse(jsonPayload);
+        
+        // Check if token is expired based on exp claim
+        if (payload.exp && payload.exp * 1000 < Date.now()) {
+          TokenStorage.clearTokens();
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+        
+        // Extract user info from JWT
+        const userInfo = {
+          id: payload.sub || payload.userId || payload.id,
+          firstName: payload.firstName || payload.given_name || '',
+          lastName: payload.lastName || payload.family_name || '',
+          email: payload.email || payload.username,
+          roleId: payload.roleId ? parseInt(payload.roleId, 10) : 2,
+          role: payload.role || 'user'
+        };
+        
+        setUser(userInfo);
+        setLoading(false);
+        return;
+      } catch (jwtError) {
+        console.log('Could not parse JWT, falling back to API call');
+      }
       
-      // Add timeout to prevent infinite loading
+      // Fallback: validate token by fetching profile (only if JWT parsing failed)
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Auth validation timeout')), 10000)
       );
       
-      // Validate token by fetching profile
       const profilePromise = getProfile();
       const profile = await Promise.race([profilePromise, timeoutPromise]);
       
