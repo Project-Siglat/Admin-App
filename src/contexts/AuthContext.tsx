@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Add timeout to prevent infinite loading
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Auth validation timeout')), ENV_CONFIG.apiTimeout)
+        setTimeout(() => reject(new Error('Auth validation timeout')), 10000)
       );
       
       // Validate token by fetching profile
