@@ -9,6 +9,7 @@ import AdminRegistrationPage from './pages/AdminRegistrationPage';
 import DashboardPage from './pages/DashboardPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import EnvironmentPage from './pages/EnvironmentPage';
 
 const App: React.FC = () => {
   return (
@@ -47,6 +48,8 @@ const App: React.FC = () => {
                 <DashboardPage />
               </AuthGuard>
             } />
+            
+            <Route path="/env" element={<EnvironmentPage />} />
             
             {/* Unauthorized page */}
             <Route path="/unauthorized" element={<UnauthorizedPage />} />

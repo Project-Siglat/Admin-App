@@ -2,54 +2,69 @@
 // for maximum compatibility and security
 
 export class TokenStorage {
-    // Set token in both localStorage and httpOnly cookie
+    // Set token in cookies (primary) and localStorage (backup)
     static setToken(token, expiresAt) {
         if (!token) return;
 
-        // Store in localStorage for client-side access
+        // Set expiration - default to 7 days if not provided
+        const expires = expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+        
+        // Store in cookies first (primary storage)
+        this.setCookie('authToken', token, expires);
+        
+        // Store in localStorage as backup
         localStorage.setItem('authToken', token);
-        if (expiresAt) {
-            localStorage.setItem('tokenExpiresAt', expiresAt);
-        }
-
-        // Also set as httpOnly cookie for server-side access
-        this.setCookie('authToken', token, expiresAt);
+        localStorage.setItem('tokenExpiresAt', expires);
     }
 
-    // Get token from localStorage (fallback to cookie)
+    // Get token from cookies (primary) with localStorage fallback
     static getToken() {
-        // Try localStorage first
-        let token = localStorage.getItem('authToken');
+        // Try cookies first (primary storage)
+        let token = this.getCookie('authToken');
         
-        // Fallback to cookie if localStorage is empty
+        // Fallback to localStorage if cookie is empty
         if (!token) {
-            token = this.getCookie('authToken');
-            // If found in cookie, sync back to localStorage
+            token = localStorage.getItem('authToken');
+            // If found in localStorage, restore to cookie
             if (token) {
-                localStorage.setItem('authToken', token);
+                const expires = localStorage.getItem('tokenExpiresAt') || 
+                               new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+                this.setCookie('authToken', token, expires);
             }
         }
         
         return token;
     }
 
-    // Set refresh token
+    // Set refresh token in cookies (primary) and localStorage (backup)
     static setRefreshToken(refreshToken, expiresAt) {
         if (!refreshToken) return;
 
+        // Set expiration - default to 30 days for refresh token
+        const expires = expiresAt || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+        
+        // Store in cookies first (primary storage)
+        this.setCookie('refreshToken', refreshToken, expires);
+        
+        // Store in localStorage as backup
         localStorage.setItem('refreshToken', refreshToken);
-        this.setCookie('refreshToken', refreshToken, expiresAt);
     }
 
-    // Get refresh token
+    // Get refresh token from cookies (primary) with localStorage fallback
     static getRefreshToken() {
-        let token = localStorage.getItem('refreshToken');
+        // Try cookies first (primary storage)
+        let token = this.getCookie('refreshToken');
+        
+        // Fallback to localStorage if cookie is empty
         if (!token) {
-            token = this.getCookie('refreshToken');
+            token = localStorage.getItem('refreshToken');
+            // If found in localStorage, restore to cookie
             if (token) {
-                localStorage.setItem('refreshToken', token);
+                const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+                this.setCookie('refreshToken', token, expires);
             }
         }
+        
         return token;
     }
 
@@ -76,6 +91,10 @@ export class TokenStorage {
         if (expiresAt) {
             const expiryDate = new Date(expiresAt);
             cookieString += `; expires=${expiryDate.toUTCString()}`;
+        } else {
+            // Default to 7 days if no expiration provided
+            const defaultExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+            cookieString += `; expires=${defaultExpiry.toUTCString()}`;
         }
 
         // Set secure flag if on HTTPS
